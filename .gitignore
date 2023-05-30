@@ -1,0 +1,12 @@
+node_modules/
+
+garbage.js
+
+config.json
+folderData.json
+
+*.bat
+*.log
+*.txt
+*.exe
+*.7z

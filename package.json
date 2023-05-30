@@ -1,0 +1,20 @@
+{
+  "name": "e621_auto_archive",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "terminal-kit": "^3.0.0"
+  },
+  "bin": "index.js",
+  "pkg": {
+    "assets": [
+      "./node_modules/terminal-kit/lib/**/*"
+    ]
+  }
+}
