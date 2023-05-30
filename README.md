@@ -1,23 +1,31 @@
 # e6AutoArchive
 
 A console program that lets you update your huge collection of images from e621.
-![[Capture2.png]]
+
+![Screenshot](images/Capture2.png)
 
 ---
 
 ## Usage
 
 First set up a folder filled with subfolders named after tags from e621. These folders should be empty unless the files within are stored the same way e6AA stores them (`<id>_<md5>.<ext>`). In the below example the folder is named "archive" and is filled with some example subfolders.
-![[Pasted image 20230530171713.png]] 
+
+![Screenshot](images/Pasted%20image%2020230530171713.png)
+
 
 Then put the exe in another folder outside of your archive folder.
-![[Pasted image 20230530172105.png]]
+
+![Screenshot](images/Pasted%20image%2020230530172105.png)
 
 IMPORTANT: If your archive folder is named something else and/or is in a different relative location from the exe you will have to specify this in the `config.json` file. This file will be generated in the same place as the exe once you open it for the first time. You can also change this through the console menu that the program provides.
-![[Pasted image 20230530172800.png]]
+
+![Screenshot](images/Pasted%20image%2020230530172800.png)
+
 
 If everything is set up correctly you should now choose the "Generate data from archive" option. You will need to choose this option whenever you make changes to your archive folder such as adding a new folder or removing one.
-![[Capture1.png]]
+
+![Screenshot](images/Capture1.png)
+
 
 If everything went right you can now choose the "Run downloader" option and the subfolders will start filling up with files from e621 that contained tags that match the folder's name.
 
