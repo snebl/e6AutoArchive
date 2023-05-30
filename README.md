@@ -4,7 +4,6 @@ A console program that lets you update your huge collection of images from e621.
 
 ![Screenshot](images/Capture2.png)
 
----
 
 ## Usage
 
@@ -32,10 +31,9 @@ If everything went right you can now choose the "Run downloader" option and the 
 At any time after using the program you can re-open it and run the downloader again to automatically update your archive without wasting time redownloading images you already have.
 The program fetches and downloads images as fast as it can without triggering e621's rate limit.
 
----
 
 ## Info
 
-This program was made out of annoyance with most downloaders that only let you do one query at a time. After some time with a collection large enough this becomes pretty unpractical and so I made this program to make things (hopefully) easier.
+This program was made out of annoyance with most downloaders that only let you do one query at a time. After some time with a collection large enough this becomes pretty impractical and so I made this program to make things (hopefully) easier.
 
 There are FAR better programs that solve that problem such as Grabber (as it lets you have a download list) but if you only download files from e621 and don't need all those bells an whistles then this program might be an okay alternative, and there is also the upside of not wasting time checking each file to see if it already exists.
