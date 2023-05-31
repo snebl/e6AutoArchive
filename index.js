@@ -45,7 +45,7 @@ var names = []
  * [x] ability to do only one folder
  * [x] delete incomplete files
  * [x] fix enter to continue
- * [ ] check for common errors like generating for a file that does not exist
+ * [x] check for common errors like generating for a file that does not exist
  * [ ] use Authorization header
 */
 
@@ -121,6 +121,10 @@ function mainMenu(message = "", clear = true) {
                     if (response.selectedIndex == 1) {
                         createDataJSON().then(() => {
                             mainMenu("Data file was updated!")
+                        }, reason => {
+                            console.clear()
+                            term.red(reason)
+                            mainMenu("", false)
                         })
                     } else {
                         mainMenu()
@@ -209,7 +213,10 @@ function mainMenu(message = "", clear = true) {
  */
 function createDataJSON() {return new Promise((resolve, reject) => {
     // make sure our folder actually exists
-    if (!fs.existsSync(config.archiveFolder)) reject("Cannot generate data for a file that does not exist")
+    if (!fs.existsSync(config.archiveFolder)) {
+        reject("Cannot generate data for a file that does not exist...")
+        return
+    }
 
     // make array of all folder names in chosen archive folder
     var tagFolders = fs.readdirSync(config.archiveFolder, { withFileTypes: true }).filter(dirent => dirent.isDirectory()).map(dirent => dirent.name)
@@ -329,7 +336,7 @@ async function dlFolder(save) { return new Promise(async resolve => {
                             // after download completed close file stream
                             file.on("finish", () => {
                                 file.close()
-                                console.log("   Download Completed " + infoString)
+                                console.log("  ├─Download Completed " + infoString)
                                 total.total++
                                 total.bytes += post["file"]["size"]
                                 resolve()
@@ -339,24 +346,24 @@ async function dlFolder(save) { return new Promise(async resolve => {
                         // if there is an error downloading the file
                         request.on("error", (err) => {
                             file.close()
-                            console.log("   Error downloading " + infoString)
+                            console.log("  ├─Error downloading " + infoString)
                             console.log(err)
         
                             // retry
                             if (attempt < 4) {
                                 setTimeout(async () => {
-                                    console.log("[Attempt " + (attempt + 1) + " Failed, Retrying...]")
+                                    console.log("  │   └─[Attempt " + (attempt + 1) + " Failed, Retrying...]")
                                     await dlFile(attempt + 1)
                                     resolve()
                                 })
                             } else {
                                 total.error++
-                                console.log("[Download failed...]")
+                                console.log("  ├─[Download failed...]")
                                 resolve()
                             }
                         })
                     } else {
-                        console.log("   Error downloading | [null link, a username and api key may be required]")
+                        console.log("  ├─Error downloading | [null link, a username and api key may be required]")
                         resolve()
                     }
                 })}
@@ -377,7 +384,7 @@ async function dlFolder(save) { return new Promise(async resolve => {
                 // shouldn't be needed since its 320 files but someone might have ridiculous internet speeds
                 let rate = rateLimitDelay()
 
-                console.log("   [ reached end of current fetch ("  + rate.timePassed + "ms passed), fetching more... ]")
+                console.log("  ├─[ reached end of current fetch ("  + rate.timePassed + "ms passed), fetching more... ]")
 
                 // next fetch
                 setTimeout(async () => {
@@ -395,13 +402,13 @@ async function dlFolder(save) { return new Promise(async resolve => {
         index++
 
         // nothing was downloaded
-        if (empty) console.log("   [Already up to date...]")
+        if (empty) console.log("  ├─[Already up to date...]")
         empty = false
 
         if (index < save.table.length) {
             let rate = rateLimitDelay()
 
-            console.log("   [" + rate.timePassed + "ms passed, sleeping for " + rate.delay + "ms]")
+            console.log("  └─[" + rate.timePassed + "ms passed, sleeping for " + rate.delay + "ms]")
 
             // next object
             running = false
