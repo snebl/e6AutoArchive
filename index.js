@@ -383,7 +383,7 @@ async function dlFolder(save) { return new Promise(async resolve => {
                 setTimeout(async () => {
                     await dlRun()
                     resolve()
-                }, delay)
+                }, rate.delay)
             } else {
                 resolve()
             }
@@ -408,7 +408,7 @@ async function dlFolder(save) { return new Promise(async resolve => {
             setTimeout(async () => {
                 await dlFolder(save)
                 resolve()
-            }, delay)
+            }, rate.delay)
         } else {
             // finish
             console.log("\nAll done! [" + total.total + " files downloaded, " + total.error + " errors]\n[" + total.bytes + " bytes downloaded]\nSaving new indexes...")
