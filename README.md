@@ -1,8 +1,6 @@
 # e6AutoArchive
 
-A console program that lets you more easily make and update collections of images from e621.net.
-
-![Screenshot](images/Capture2.png)
+![Screenshot](images/image.png)
 
 
 ## Usage
