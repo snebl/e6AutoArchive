@@ -31,7 +31,11 @@ var index = 0
 var downloads = []
 var empty = false
 var lastAPICallTime = Date.now()
-var total = [0, 0, 0]
+var total = {
+    total: 0,
+    error: 0,
+    bytes: 0
+}
 var running = false
 var names = []
 
@@ -41,6 +45,7 @@ var names = []
  * [x] ability to do only one folder
  * [x] delete incomplete files
  * [x] fix enter to continue
+ * [ ] check for common errors like generating for a file that does not exist
  * [ ] use Authorization header
 */
 
@@ -111,7 +116,7 @@ function mainMenu(message = "", clear = true) {
                 break;
 
             case 1:
-                term("\nAre you use? This will override \"" + config.folderDataJson + "\" if it exists already.")
+                term("\nAre you sure? This will override \"" + config.folderDataJson + "\" if it exists already.")
                 term.singleColumnMenu(["No", "Yes"], (error, response) => {
                     if (response.selectedIndex == 1) {
                         createDataJSON().then(() => {
@@ -124,8 +129,7 @@ function mainMenu(message = "", clear = true) {
                 break;
 
             case 2:
-                // TODO: fix this goofy shit i wrote at 3am
-                term.yellow("\nAre you use? This will override \"" + config.folderDataJson + "\" with ONLY ONE ENTRY until you regenerate!")
+                term.yellow("\nAre you sure? This will override \"" + config.folderDataJson + "\" with ONLY ONE ENTRY until you regenerate!")
                 term.singleColumnMenu(["No", "Yes"], async (error, response2) => {
                     if (response2.selectedIndex == 1) {
                         term("\nChoose an option.")
@@ -203,7 +207,10 @@ function mainMenu(message = "", clear = true) {
 /**
  * create folder data json file
  */
-function createDataJSON() {return new Promise(resolve => {
+function createDataJSON() {return new Promise((resolve, reject) => {
+    // make sure our folder actually exists
+    if (!fs.existsSync(config.archiveFolder)) reject("Cannot generate data for a file that does not exist")
+
     // make array of all folder names in chosen archive folder
     var tagFolders = fs.readdirSync(config.archiveFolder, { withFileTypes: true }).filter(dirent => dirent.isDirectory()).map(dirent => dirent.name)
 
@@ -323,8 +330,8 @@ async function dlFolder(save) { return new Promise(async resolve => {
                             file.on("finish", () => {
                                 file.close()
                                 console.log("   Download Completed " + infoString)
-                                total[0]++
-                                total[2] += post["file"]["size"]
+                                total.total++
+                                total.bytes += post["file"]["size"]
                                 resolve()
                             })
                         })
@@ -338,12 +345,12 @@ async function dlFolder(save) { return new Promise(async resolve => {
                             // retry
                             if (attempt < 4) {
                                 setTimeout(async () => {
-                                    console.log("[Attempt " + attempt + " Failed, Retrying...]")
+                                    console.log("[Attempt " + (attempt + 1) + " Failed, Retrying...]")
                                     await dlFile(attempt + 1)
                                     resolve()
                                 })
                             } else {
-                                total[1]++
+                                total.error++
                                 console.log("[Download failed...]")
                                 resolve()
                             }
@@ -368,13 +375,9 @@ async function dlFolder(save) { return new Promise(async resolve => {
             if (data["posts"].length == 320) {
                 // comply with rate limit (~1 API call per second)
                 // shouldn't be needed since its 320 files but someone might have ridiculous internet speeds
-                let timePassed = Date.now() - lastAPICallTime
-                lastAPICallTime = Date.now()
-                let delay = 1000 - timePassed
-                if (isNaN(delay)) delay = 1000
-                delay = delay > 0 ? delay : 0
+                let rate = rateLimitDelay()
 
-                console.log("   [ reached end of current fetch ("  + timePassed + "ms passed), fetching more... ]")
+                console.log("   [ reached end of current fetch ("  + rate.timePassed + "ms passed), fetching more... ]")
 
                 // next fetch
                 setTimeout(async () => {
@@ -396,14 +399,9 @@ async function dlFolder(save) { return new Promise(async resolve => {
         empty = false
 
         if (index < save.table.length) {
-            // comply with rate limit (~1 API call per second)
-            let timePassed = Date.now() - lastAPICallTime
-            lastAPICallTime = Date.now()
-            let delay = 1000 - timePassed
-            if (isNaN(delay)) delay = 1000
-            delay = delay > 0 ? delay : 0
+            let rate = rateLimitDelay()
 
-            console.log("   [" + timePassed + "ms passed, sleeping for " + delay + "ms]")
+            console.log("   [" + rate.timePassed + "ms passed, sleeping for " + rate.delay + "ms]")
 
             // next object
             running = false
@@ -413,7 +411,7 @@ async function dlFolder(save) { return new Promise(async resolve => {
             }, delay)
         } else {
             // finish
-            console.log("\nAll done! [" + total[0] + " files downloaded, " + total[1] + " errors]\n[" + total[2] + " bytes downloaded]\nSaving new indexes...")
+            console.log("\nAll done! [" + total.total + " files downloaded, " + total.error + " errors]\n[" + total.bytes + " bytes downloaded]\nSaving new indexes...")
 
             // save newest IDs
             fs.writeFile(config.folderDataJson, JSON.stringify(save, null, 4), "utf-8", async err => {
@@ -440,7 +438,7 @@ async function dlFolder(save) { return new Promise(async resolve => {
 
 /**
  * Comply with rate limit (~1 API call per second)
- * @returns A delay in ms of when it will be 1s from last call (0 if negative)
+ * @returns An object containing the delay in ms of when it will be 1s from last call (0 if negative) and the time that has passed since this function was last called
  */
 function rateLimitDelay() {
     let timePassed = Date.now() - lastAPICallTime
@@ -448,13 +446,14 @@ function rateLimitDelay() {
     let delay = 1000 - timePassed
     if (isNaN(delay)) delay = 1000
     delay = delay > 0 ? delay : 0
-    return delay
+    return {
+        delay: delay,
+        timePassed: timePassed
+    }
 }
 
-/**
- * 
- */
 async function exitHandler() {
+    // delete the files we didn't finish downloading yet
     let unlinks = []
     if (running) {
         for (const file of names) {
@@ -471,5 +470,4 @@ var sigs = [
     'SIGUSR2', 'SIGTERM', 
 ]
 
-// handle exiting
 sigs.forEach(evt => process.on(evt, exitHandler))
