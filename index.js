@@ -134,6 +134,7 @@ function mainMenu(message = "", clear = true) {
 
             case 2:
                 term.yellow("\nAre you sure? This will override \"" + config.folderDataJson + "\" with ONLY ONE ENTRY until you regenerate!")
+                term.brightBlue("\nIf you just want to add to your archive, just add a new folder with a valid name and regenerate data instead.")
                 term.singleColumnMenu(["No", "Yes"], async (error, response2) => {
                     if (response2.selectedIndex == 1) {
                         term("\nChoose an option.")
@@ -332,7 +333,7 @@ async function dlFolder(save) { return new Promise(async resolve => {
                         let file = fs.createWriteStream(names[nameIndex - 1]);
                         let request = https.get(post["file"]["url"], (response) => {
                             response.pipe(file)
-        
+
                             // after download completed close file stream
                             file.on("finish", () => {
                                 file.close()
@@ -342,13 +343,13 @@ async function dlFolder(save) { return new Promise(async resolve => {
                                 resolve()
                             })
                         })
-        
+
                         // if there is an error downloading the file
                         request.on("error", (err) => {
                             file.close()
                             console.log("  ├─Error downloading " + infoString)
                             console.log(err)
-        
+
                             // retry
                             if (attempt < 4) {
                                 setTimeout(async () => {
