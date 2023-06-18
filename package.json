@@ -16,5 +16,8 @@
     "assets": [
       "./node_modules/terminal-kit/lib/**/*"
     ]
+  },
+  "devDependencies": {
+    "eslint": "^8.43.0"
   }
 }
