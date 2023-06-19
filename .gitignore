@@ -4,7 +4,7 @@ node_modules/
 garbage.js
 
 config.json
-folderData.json
+*Data.json
 
 *.bat
 *.log

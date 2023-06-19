@@ -20,60 +20,65 @@
 
 const fs = require('fs');
 const https = require('https');
-const subProcess = require('child_process');
 
 const term = require('terminal-kit').terminal;
 
 let config;
 let archiveData;
 
-let index = 0;
-const downloads = [];
-let empty = false;
 let lastAPICallTime = Date.now();
+
+let downloadPromises = [];
+let fileStreams = [];
+
+let empty = false;
+let closing = false;
+
+let index = 0;
 const total = {
 	total: 0,
 	error: 0,
 	bytes: 0
 };
-let running = false;
-let closing = false;
-let names = [];
-
-/**
- * TODO:
- * [x] use pages to get more than 320 posts for new folders
- * [x] ability to do only one folder
- * [x] delete incomplete files
- * [x] fix enter to continue
- * [x] check for common errors like generating for a file that does not exist
- * [ ] use Authorization header
-*/
 
 // make sure config.json exists and is valid
 try {
 	config = JSON.parse(fs.readFileSync('./config.json'));
+	setFiles();
 }
 catch (error) {
-	term.yellow('This program requires a config file to run. Please re-open after editing the one generated for you...');
+	term.yellow('[ WARN ] ');
+	term('No config file detected.');
+
 	const defaultConfig = {
-		// userName: '',
-		// APIKey: '',
-		archiveFolder: '../archive',
-		folderDataJson: './folderData.json',
+		selectedArchive: 0,
+		archives: [
+			{
+				folder: '../archive',
+				dataJSON: './folderData.json'
+			}
+		],
 		exclusionSubstrings: [
 			';'
 		]
 	};
-	fs.writeFileSync('./config.json', JSON.stringify(defaultConfig, null, 4), 'utf-8', err => {
-		if (err) {
-			console.log('\nCould not create config file. I hope you didn\'t put me in your root folder or something silly like that.');
+
+	try {
+		fs.writeFileSync('./config.json', JSON.stringify(defaultConfig, null, 4), 'utf-8');
+
+		// tell user to edit config
+		term.brightBlue('\n\nThis program requires a config file to run.\nPlease re-open after editing the one generated for you...');
+		term('\n\nEdit this -> ').brightGreen('[ ./config.json ]...');
+	}
+	catch (error) {
+		term.red('\n[ ERROR ] ');
+		console.error(error);
+	}
+	finally {
+		term.inputField(() => {
 			process.exit();
-		}
-	});
-}
-finally {
-	setFiles();
+		});
+	}
 }
 
 /**
@@ -90,16 +95,26 @@ function setFiles() {
 		return;
 	}
 
-	if (!fs.existsSync(config.folderDataJson)) {
-		fs.writeFileSync(config.folderDataJson, '{"table":[]}', 'utf-8');
+	if (config.archives.length == 0) {
+		term.red('\n[ CONFIG ERROR ] ');
+		term('No available archives');
+		term.inputField();
+		return;
+	}
+	else if (config.selectedArchive >= config.archives.length) {
+		config.selectedArchive = 0;
+	}
+
+	if (!fs.existsSync(config.archives[config.selectedArchive].dataJSON)) {
+		fs.writeFileSync(config.archives[config.selectedArchive].dataJSON, '{"table":[]}', 'utf-8');
 	}
 
 	// check for bad data file
 	try {
-		archiveData = JSON.parse(fs.readFileSync(JSON.parse(fs.readFileSync('./config.json')).folderDataJson));
+		archiveData = JSON.parse(fs.readFileSync(JSON.parse(fs.readFileSync('./config.json')).archives[config.selectedArchive].dataJSON));
 	}
 	catch (error) {
-		fs.writeFileSync(config.folderDataJson, '{"table":[]}', 'utf-8');
+		fs.writeFileSync(config.archives[config.selectedArchive].dataJSON, '{"table":[]}', 'utf-8');
 		mainMenu('The data file was invalid, you will need to generate it\'s contents.');
 		return;
 	}
@@ -108,6 +123,7 @@ function setFiles() {
 		mainMenu('The data file is empty, you will need to generate it\'s contents.');
 	}
 	else {
+		console.clear();
 		mainMenu('', false);
 	}
 }
@@ -118,12 +134,12 @@ function setFiles() {
 function mainMenu(message = '', clear = true) {
 	if (clear) console.clear();
 	if (message != '') term.yellow(message);
-	archiveData = JSON.parse(fs.readFileSync(JSON.parse(fs.readFileSync('./config.json')).folderDataJson));
+	archiveData = JSON.parse(fs.readFileSync(JSON.parse(fs.readFileSync('./config.json')).archives[config.selectedArchive].dataJSON));
 
-	term.singleColumnMenu(['Run downloader', 'Generate data from archive', 'Download only one folder', 'List Archive', 'Archive info', 'Change archive location', 'Edit config', 'Close program'], async (error, response) => {
+	term.singleColumnMenu(['Run downloader', 'Generate data from archive', 'Swap archive location', 'Add an archive', 'Archive info', 'Close program'], async (error, response) => {
 		switch (response.selectedIndex) {
 		case 0:
-			if (fs.existsSync(config.folderDataJson)) {
+			if (fs.existsSync(config.archives[config.selectedArchive].dataJSON)) {
 				downloadAllFolders(archiveData).then(() => {
 					if (closing) return;
 					mainMenu();
@@ -135,7 +151,7 @@ function mainMenu(message = '', clear = true) {
 			break;
 
 		case 1:
-			term('\nAre you sure? This will override "' + config.folderDataJson + '" if it exists already.');
+			term('\nAre you sure? This will override "' + config.archives[config.selectedArchive].dataJSON + '" if it exists already.');
 			term.singleColumnMenu(['No', 'Yes'], (error, response) => {
 				if (response.selectedIndex == 1) {
 					term.green('\nGenerating...');
@@ -154,78 +170,49 @@ function mainMenu(message = '', clear = true) {
 			break;
 
 		case 2:
-			term.yellow('\nAre you sure? This will override "' + config.folderDataJson + '" with ONLY ONE ENTRY until you regenerate!');
-			term.brightBlue('\nIf you just want to add to your archive, just add a new folder with a valid name and regenerate data instead.');
-			term.singleColumnMenu(['No', 'Yes'], async (error, response2) => {
-				if (response2.selectedIndex == 1) {
-					term('\nChoose an option.');
-					term.singleColumnMenu(['Update', 'Force download', 'cancel'], async (error, response3) => {
-						if (response3.selectedIndex == 2) {
-							mainMenu();
-						}
-						else {
-							term('\nEnter valid folder within archive\n> ');
-							const singleFolder = await term.inputField().promise;
-							let fail = true;
-							for (const folder of archiveData.table) {
-								if (folder.tags == singleFolder) {
-									fail = false;
-									const obj = response3.selectedIndex == 0 ? { table: [folder] } : { table: [{ tags: folder.tags, latestID: 0 }] };
-									console.log('\n');
-									downloadAllFolders(obj).then(() => {
-										if (closing) return;
-										mainMenu('', true);
-									});
-									break;
-								}
-							}
+			term.yellow('\nTo add more options use the "Add an archive option", or edit the config.json file and restart the program.');
 
-							if (fail) {
-								mainMenu('Could not find entry in data file (you may need to generate data from archive first).');
-							}
-						}
-					});
-				}
-				else {
-					mainMenu();
-				}
+			// config.archives must be "cloned" here or it will be affected by any changes to the visual list
+			const archiveList = JSON.parse(JSON.stringify(config.archives));
+			for (let i = 0; i < archiveList.length; i++) {
+				archiveList[i] = JSON.stringify(archiveList[i]);
+			}
+
+			term.singleColumnMenu(archiveList, (error, response) => {
+				config.selectedArchive = response.selectedIndex;
+				fs.writeFileSync('./config.json', JSON.stringify(config, null, 4), 'utf-8');
+
+				archiveInfo();
 			});
 			break;
 
 		case 3:
-			const view = [];
-			for (let i = 0; i < archiveData.table.length; i++) {
-				view[i] = i + '. ' + archiveData.table[i].tags;
-			}
-			term.gridMenu(view, () => {
-				mainMenu();
+			const newArchive = {
+				folder: '',
+				dataJSON: ''
+			};
+
+			term.yellow('\nEnter new archive location (examples: ./folderName, ../folderName, ../../folderName): ');
+			term.inputField((error, response) => {
+				newArchive.folder = response;
+
+				term.yellow('\n\nEnter a name for this archive\'s data file: ');
+				term.inputField((error, response) => {
+					if (!response.endsWith('.json')) response += '.json';
+					newArchive.dataJSON = response;
+
+					// update config file
+					config.selectedArchive = config.archives.push(newArchive) - 1;
+					fs.writeFileSync('./config.json', JSON.stringify(config, null, 4), 'utf-8');
+					fs.writeFileSync(config.archives[config.selectedArchive].dataJSON, '{"table":[]}', 'utf-8');
+
+					archiveInfo();
+				});
 			});
 			break;
+
 		case 4:
-			console.clear();
-			term.magenta('Archive location: ' + config.archiveFolder + '\nTotal valid folders: ' + archiveData.table.length + '\n');
-			mainMenu('', false);
-			break;
-
-		case 5:
-			term('\nEnter new archive location (relative path examples: ./folder | ../archive | ../../stuff)\n> ');
-			const input = await term.inputField().promise;
-			const newConfig = config;
-			newConfig.archiveFolder = input;
-			fs.writeFile('./config.json', JSON.stringify(newConfig, null, 4), 'utf-8', err => {
-				if (err) {
-					console.log('Could not save JSON :<');
-					console.log(err);
-				}
-
-				mainMenu('New archive location set: ' + config.archiveFolder);
-			});
-			break;
-
-		case 6:
-			subProcess.exec('start config.json', () => {
-				mainMenu('Remember to restart this program after making changes to the config file!');
-			});
+			archiveInfo();
 			break;
 
 		default: process.exit();
@@ -234,18 +221,27 @@ function mainMenu(message = '', clear = true) {
 }
 
 /**
+ * Display info alongside the main menu
+ */
+function archiveInfo() {
+	console.clear();
+	term.magenta('Current archive location: ' + config.archives[config.selectedArchive].folder + '\nTotal valid folders: ' + archiveData.table.length + '\n');
+	mainMenu('', false);
+}
+
+/**
  * create folder data json file
  */
 function createDataJSON() {
 	return new Promise((resolve, reject) => {
 	// make sure our folder actually exists
-		if (!fs.existsSync(config.archiveFolder)) {
+		if (!fs.existsSync(config.archives[config.selectedArchive].folder)) {
 			reject('Cannot generate data for a file that does not exist...');
 			return;
 		}
 
 		// make array of all folder names in chosen archive folder
-		const tagFolders = fs.readdirSync(config.archiveFolder, { withFileTypes: true }).filter(dirent => dirent.isDirectory()).map(dirent => dirent.name);
+		const tagFolders = fs.readdirSync(config.archives[config.selectedArchive].folder, { withFileTypes: true }).filter(dirent => dirent.isDirectory()).map(dirent => dirent.name);
 
 		// remove folders with exclusion symbols
 		for (let i = 0; i < tagFolders.length; i++) {
@@ -260,8 +256,8 @@ function createDataJSON() {
 
 		// find latest IDs in each folder
 		for (let i = 0; i < tagFolders.length; i++) {
-		// read files
-			const files = fs.readdirSync(config.archiveFolder + '/' + tagFolders[i]);
+			// read files
+			const files = fs.readdirSync(config.archives[config.selectedArchive].folder + '/' + tagFolders[i]);
 			if (files.length == 0) {
 				tagFolders[i] = {
 					tags: tagFolders[i],
@@ -269,7 +265,7 @@ function createDataJSON() {
 				};
 			}
 			else {
-			// get IDs of all files per folder
+				// get IDs of all files per folder
 				for (let i = 0; i < files.length; i++) {
 					files[i] = files[i].slice(0, files[i].indexOf('_'));
 				}
@@ -283,7 +279,7 @@ function createDataJSON() {
 					};
 				}
 				else {
-				// exclude folder if NaN
+					// exclude folder if NaN
 					tagFolders.splice(i, 1);
 					i--;
 				}
@@ -292,10 +288,10 @@ function createDataJSON() {
 
 		// save the array list as JSON
 		const obj = {
-		// an array of objects
+			// an array of objects
 			table: tagFolders
 		};
-		fs.writeFile(config.folderDataJson, JSON.stringify(obj, null, 4), 'utf-8', err => {
+		fs.writeFile(config.archives[config.selectedArchive].dataJSON, JSON.stringify(obj, null, 4), 'utf-8', err => {
 			if (err) {
 				term.red('\n[ ERROR ] ');
 				console.error(err);
@@ -315,14 +311,13 @@ function createDataJSON() {
 async function downloadAllFolders(save) {
 	if (closing) return;
 	try {
-		running = true;
 		const folderName = save.table[index].tags;
 		const tags = (folderName).replace(' ', '+').replace('rating_', 'rating:');
 		console.log('\nDownloading: ' + save.table[index].tags);
 
 		// function is recursive so it can call itself (with timeout) when we need to fetch and download more than 320 files (e621's max limit)
 		async function downloadFolder() {
-			// fetch new URLs for each folder listed in folderData.json
+			// fetch new URLs for each folder listed in the selected data json file
 			const response = await fetch('https://e621.net/posts.json?'
 				// no need for an api key since links can be reconstructed if e6 says they are null
 				// + (config.userName + config.APIKey != '' ? 'login=' + config.userName + '&api_key=' + config.APIKey + '&' : '')
@@ -345,9 +340,6 @@ async function downloadAllFolders(save) {
 				function downloadFile(attempt = 0) {
 					if (closing) return;
 					return new Promise(resolve => {
-						// names array is so we can unlink all downloads if closed early
-						names = [];
-
 						// download information
 						const infoString = '| ' + post['id'] + ' | ' + post['file']['url'] + ' | ' + Math.floor(post['file']['size'] * 0.001) + ' kB';
 
@@ -359,15 +351,23 @@ async function downloadAllFolders(save) {
 							wasDecoded = true;
 						}
 
+						// open stream for each missing file
+						const fileName = config.archives[config.selectedArchive].folder + '/' + folderName + '/' + post['id'] + '_' + post['file']['md5'] + '.' + post['file']['ext'];
+						const fileStream = fs.createWriteStream(fileName);
+
+						// push into array so we can close and unlink all downloads if closed early
+						fileStreams.push({
+							stream: fileStream,
+							name: fileName
+						});
+
 						// save each missing file
-						const nameIndex = names.push(config.archiveFolder + '/' + folderName + '/' + post['id'] + '_' + post['file']['md5'] + '.' + post['file']['ext']);
-						const file = fs.createWriteStream(names[nameIndex - 1]);
 						const request = https.get(url, (response) => {
-							response.pipe(file);
+							response.pipe(fileStream);
 
 							// after download completed close file stream
-							file.on('finish', () => {
-								file.close();
+							fileStream.on('finish', () => {
+								fileStream.close();
 								console.log('  ├─Download Completed ' + infoString);
 								if (wasDecoded) console.log('  │   └─[URL decoded]');
 								total.total++;
@@ -378,7 +378,7 @@ async function downloadAllFolders(save) {
 
 						// if there is an error downloading the file
 						request.on('error', async (err) => {
-							file.close();
+							fileStream.close();
 							console.log('  ├─Error downloading ' + infoString);
 							console.log(err);
 
@@ -399,11 +399,12 @@ async function downloadAllFolders(save) {
 				}
 
 				// call
-				downloads.push(downloadFile());
+				downloadPromises.push(downloadFile());
 			}
 
 			// wait for all downloads to finish
-			await Promise.all(downloads);
+			await Promise.all(downloadPromises);
+			downloadPromises = [];
 
 			// only update latest ID once we are done
 			save.table[index].latestID = data['posts'][0]['id'];
@@ -441,7 +442,6 @@ async function downloadAllFolders(save) {
 			console.log('  └─[' + rate.timePassed + 'ms passed, sleeping for ' + rate.delay + 'ms]');
 
 			// next object
-			running = false;
 			await new Promise(r => setTimeout(r, rate.delay));
 			await downloadAllFolders(save);
 			return;
@@ -453,7 +453,7 @@ async function downloadAllFolders(save) {
 
 			// save newest IDs
 			try {
-				fs.writeFileSync(config.folderDataJson, JSON.stringify(save, null, 4), 'utf-8');
+				fs.writeFileSync(config.archives[config.selectedArchive].dataJSON, JSON.stringify(save, null, 4), 'utf-8');
 			}
 			catch (err) {
 				term.red('\n[ Could not save JSON :< ] ');
@@ -462,8 +462,7 @@ async function downloadAllFolders(save) {
 
 			// end
 			index = 0;
-			running = false;
-			names = [];
+			fileStreams = [];
 			console.log('Finished! ' + Date.now() + '\n\nPress enter to return to main menu...');
 			await term.inputField().promise;
 		}
@@ -491,19 +490,18 @@ function rateLimitDelay() {
 	};
 }
 
-async function exitHandler() {
+function exitHandler() {
 	closing = true;
-	if (running) {
+	if (fileStreams.length > 0) {
+		// close and unlink any files still downloading
 		term.red('\n[ Unlinking unfinished files... ]\n\n');
-		const unlinks = [];
-		for (const file of names) {
-			unlinks.push(fs.promises.unlink(file));
+		for (const file of fileStreams) {
+			if (!file.stream.closed) file.stream.close();
+			if (fs.existsSync(file.name)) fs.unlinkSync(file.name);
 		}
-
-		names = [];
-		running = false;
-		await unlinks.all();
+		fileStreams = [];
 	}
+	process.exit();
 }
 
 const sigs = [
