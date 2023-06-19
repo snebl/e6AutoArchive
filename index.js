@@ -182,7 +182,13 @@ function mainMenu(message = '', clear = true) {
 				config.selectedArchive = response.selectedIndex;
 				fs.writeFileSync('./config.json', JSON.stringify(config, null, 4), 'utf-8');
 
-				archiveInfo();
+				if (!fs.existsSync(config.archives[config.selectedArchive].dataJSON)) {
+					fs.writeFileSync(config.archives[config.selectedArchive].dataJSON, '{"table":[]}', 'utf-8');
+					mainMenu('The data file was invalid, you will need to generate it\'s contents.');
+				}
+				else {
+					archiveInfo();
+				}
 			});
 			break;
 
