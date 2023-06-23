@@ -10,7 +10,7 @@ Create a folder with two folders in it, one will contain your archive and the ot
 ![Screenshot](images/Pasted%20image%2020230530172105.png)
 
 
-(If want your archive folder to be named something else and/or want it in a different relative location from the exe you will have to specify this in the `config.json` file under `archives[0].folder` as shown in the image below. The config file will be generated in the same place as the exe once you open it for the first time.)
+If want your archive folder to be named something else and/or want it in a different relative location from the exe you will have to specify this in the `config.json` file under `archives[0].folder` as shown in the image below. The config file will be generated in the same place as the exe once you open it for the first time.
 
 ![Screenshot](images/editLocationExample.png)
 
