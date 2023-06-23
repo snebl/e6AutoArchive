@@ -15,7 +15,7 @@ Create a folder with two folders in it, one will contain your archive and the ot
 ![Screenshot](images/editLocationExample.png)
 
 
-fill the archive folder with subfolders named after tags from e621. These folders should be empty unless the files within are stored like `<id>_<md5>.<ext>`.
+Fill the archive folder with subfolders named after tags from e621. These folders should be empty unless the files within are stored like `<id>_<md5>.<ext>`.
 
 ![Screenshot](images/Pasted%20image%2020230530171713.png)
 
