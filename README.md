@@ -5,12 +5,7 @@
 
 # Usage
 
-First set up a folder filled with subfolders named after tags from e621. These folders should be empty unless the files within are stored like `<id>_<md5>.<ext>`. In the below example the folder is named "archive" and is filled with some example subfolders.
-
-![Screenshot](images/Pasted%20image%2020230530171713.png)
-
-
-Then put the exe in another folder _outside_ of your archive folder.
+Create a folder with two folders in it, one will contain your archive and the other will contain the provided exe. (in this example, the archive folder is named "archive" and the "example" folder contains the .exe)
 
 ![Screenshot](images/Pasted%20image%2020230530172105.png)
 
@@ -20,17 +15,22 @@ If want your archive folder to be named something else and/or want it in a diffe
 ![Screenshot](images/editLocationExample.png)
 
 
-If everything is set up correctly you should now choose the "Generate data from archive" option. You will need to choose this option whenever you make changes to your archive folder such as adding a new folder or removing one.
+Fill the archive folder with subfolders named after tags from e621. These folders should be empty unless the files within are stored like `<id>_<md5>.<ext>`.
+
+![Screenshot](images/Pasted%20image%2020230530171713.png)
+
+
+If everything is set up correctly you should now open the exe choose the "Generate data from archive" option. You will need to choose this option whenever you make changes to your archive folder such as adding a new folder or removing one.
 
 ![Screenshot](images/Pasted%20image%2020230618220839.png)
 
 
 If everything went right you can now choose the "Run downloader" option and the subfolders will start filling up with files from e621 that contained tags that match the folder's name.
 
-Any time after using the program you can re-open it and run the downloader again to automatically update your archive without wasting time redownloading images you already have.
+Any time after using the program you can re-open it and run the downloader again to automatically update your archive without redownloading images you already have.
 The program fetches and downloads images as fast as it can without triggering e621's rate limit.
 
-You can add/remove folders and the program will still work as long as you generate data again before running the downloader.
+If you add or remove any folders, make sure to run the "generate data from archive" command before running the downloader again.
 
 If you have an issue or feel that something about the program should be different then please submit an issue or pull request.
 
