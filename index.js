@@ -231,7 +231,10 @@ function mainMenu(message = '', clear = true) {
  */
 function archiveInfo() {
 	console.clear();
-	term.magenta('Current archive location: ' + config.archives[config.selectedArchive].folder + '\nTotal valid folders: ' + archiveData.table.length + '\n');
+	term.magenta(
+		'Current archive location: ' + config.archives[config.selectedArchive].folder +
+		'\nTotal valid folders: ' + archiveData.table.length
+	);
 	mainMenu('', false);
 }
 
@@ -240,7 +243,7 @@ function archiveInfo() {
  */
 function createDataJSON() {
 	return new Promise((resolve, reject) => {
-	// make sure our folder actually exists
+		// make sure our folder actually exists
 		if (!fs.existsSync(config.archives[config.selectedArchive].folder)) {
 			reject('Cannot generate data for a file that does not exist...');
 			return;
@@ -318,7 +321,7 @@ async function downloadAllFolders(save) {
 	if (closing) return;
 	try {
 		const folderName = save.table[index].tags;
-		const tags = (folderName).replace(' ', '+').replace('rating_', 'rating:');
+		const tags = (folderName).replace(' ', '+').replace('rating_', 'rating:').replace('score__', 'score:>');
 		console.log('\nDownloading: ' + save.table[index].tags);
 
 		// function is recursive so it can call itself (with timeout) when we need to fetch and download more than 320 files (e621's max limit)
@@ -330,7 +333,7 @@ async function downloadAllFolders(save) {
 				+ 'tags=' + tags
 				+ '&limit=320'
 				+ '&page=a' + save.table[index].latestID,
-			{ 'headers': { 'User-Agent': 'e621_auto-archiver' } });
+			{ 'headers': { 'User-Agent': 'e6_auto_archive' } });
 
 			const data = await response.json();
 
@@ -364,7 +367,8 @@ async function downloadAllFolders(save) {
 						// push into array so we can close and unlink all downloads if closed early
 						fileStreams.push({
 							stream: fileStream,
-							name: fileName
+							name: fileName,
+							directory: config.archives[config.selectedArchive].folder + '/' + folderName + '/'
 						});
 
 						// save each missing file
@@ -498,15 +502,25 @@ function rateLimitDelay() {
 
 function exitHandler() {
 	closing = true;
+	directories = [];
+
 	if (fileStreams.length > 0) {
 		// close and unlink any files still downloading
 		term.red('\n[ Unlinking unfinished files... ]\n\n');
+		// delete unfinished files
 		for (const file of fileStreams) {
-			if (!file.stream.closed) file.stream.close();
-			if (fs.existsSync(file.name)) fs.unlinkSync(file.name);
+			// delete files in the same directory as unfinished files
+			// so that no files go permanently missing
+			if (!file.stream.closed || directories.includes(file.directory)) {
+				directories.push(file.directory);
+				file.stream.close();
+				if (fs.existsSync(file.name)) fs.unlinkSync(file.name);
+				term.red('[ FILE DELETED ; ' + file.name + ' ]');
+			}
 		}
 		fileStreams = [];
 	}
+
 	process.exit();
 }
 

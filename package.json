@@ -1,8 +1,9 @@
 {
-  "name": "e621_auto_archive",
+  "name": "e6_auto_archive",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "private": "true",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
