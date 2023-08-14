@@ -47,6 +47,11 @@ You can also add a location (and data file) manually through the `config.json` f
 ![Screenshot](images/Pasted%20image%2020230618215722.png)
 
 
+# Building ( non-windows users )
+
+Use [pkg](https://www.npmjs.com/package/pkg) or something similar.
+
+
 # Info
 
 This program was made out of annoyance with most downloaders that only let you do one query at a time. After some time with a collection large enough this becomes pretty impractical and so I made this program to make things (hopefully) easier.
