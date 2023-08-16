@@ -36,6 +36,7 @@ let empty = false;
 let closing = false;
 
 let index = 0;
+let dlComplete = 0;
 const total = {
 	total: 0,
 	error: 0,
@@ -350,16 +351,17 @@ async function downloadAllFolders(save) {
 
 			// remember modified folder
 			if (foldersModified[foldersModified.length - 1] != tags) {
-				foldersModified.push(tags);
+				foldersModified.push('+' + Object.keys(data['posts']).length + ' ][ ' + tags);
 			}
 
+			dlComplete = 0;
 			for (const post of data['posts']) {
 				// not recursive (except for retries)
 				function downloadFile(attempt = 0) {
 					if (closing) return;
 					return new Promise(resolve => {
 						// download information
-						const infoString = '| ' + post['id'] + '_' + post['file']['md5'] + '.' + post['file']['ext'] + ' | ' + Math.floor(1 / 1024 * post['file']['size']) + ' KiB | ';
+						const infoString = ' | ' + post['id'] + '_' + post['file']['md5'] + '.' + post['file']['ext'] + ' | ' + Math.floor(1 / 1024 * post['file']['size']) + ' KiB | ';
 
 						// track how long it takes to download
 						const dlTime = Date.now();
@@ -390,7 +392,8 @@ async function downloadAllFolders(save) {
 							// after download completed close file stream
 							fileStream.on('finish', () => {
 								fileStream.close();
-								console.log('  ├─Download Completed ' + infoString + (Date.now() - dlTime) + ' ms');
+								dlComplete++;
+								console.log('  ├─Download Completed [ ' + dlComplete + '/' + Object.keys(data['posts']).length + ' ]' + infoString + (Date.now() - dlTime) + ' ms');
 								if (wasDecoded) console.log('  │   └─[ URL Decoded ]');
 								total.total++;
 								total.bytes += post['file']['size'];
@@ -401,19 +404,19 @@ async function downloadAllFolders(save) {
 						// if there is an error downloading the file
 						request.on('error', async (err) => {
 							fileStream.close();
-							console.log('  ├─Error Downloading ' + infoString);
+							console.log('  ├─Error Downloading [ ' + dlComplete + '/' + Object.keys(data['posts']).length + ' ]' + infoString + '\n  ┴');
 							console.log(err);
 
 							// retry
 							if (attempt < 4) {
-								console.log('  │   └─[ Attempt ' + (attempt + 1) + ' Failed, Retrying... ]');
+								console.log('  ┬  ┬\n  │   └─[ Attempt ' + (attempt + 1) + ' Failed, Retrying... ]');
 								await new Promise(resolve => setTimeout(resolve, 200));
 								await downloadFile(attempt + 1);
 								resolve();
 							}
 							else {
 								total.error++;
-								console.log('  ├─[ Download Failed... ]');
+								console.log('  ┬\n  ├─[ Download Failed... ]');
 								resolve();
 							}
 						});
@@ -459,6 +462,7 @@ async function downloadAllFolders(save) {
 		if (empty) console.log('  ├─[ Already up to date... ]');
 		empty = false;
 
+		// not finished yet
 		if (index < save.table.length) {
 			const rate = rateLimitDelay();
 			console.log('  └─[ ' + rate.timePassed + 'ms passed, sleeping for ' + rate.delay + 'ms ]');
@@ -469,7 +473,7 @@ async function downloadAllFolders(save) {
 			return;
 		}
 		else {
-			// finish
+			// finished
 			console.log('  └─[ ' + rateLimitDelay().timePassed + 'ms passed ]');
 
 			console.log('\n\nFolders Modified:');
@@ -479,7 +483,7 @@ async function downloadAllFolders(save) {
 			console.log('  └─[ ' + foldersModified[foldersModified.length - 1] + ' ]');
 			foldersModified = [];
 
-			console.log('\nAll done! [ ' + total.total + ' files downloaded, ' + total.error + ' errors ]\n[ ' + (1 / 1048576 * total.bytes) + ' MiB downloaded ]\nSaving new indexes...');
+			console.log('\nAll done! [ ' + total.total + ' files downloaded, ' + total.error + ' errors ]\n[ ' + Math.floor(1 / 1048576 * total.bytes) + ' MiB downloaded ]\n\nSaving new indexes...');
 
 			// save newest IDs
 			try {
