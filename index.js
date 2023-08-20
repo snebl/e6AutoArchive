@@ -351,7 +351,7 @@ async function downloadAllFolders(save) {
 
 			// remember modified folder
 			if (foldersModified[foldersModified.length - 1] != tags) {
-				foldersModified.push('+' + Object.keys(data['posts']).length + ' ][ ' + tags);
+				foldersModified.push((Object.keys(data['posts']).length == 320 ? '>' : '+') + Object.keys(data['posts']).length + ' ][ ' + tags);
 			}
 
 			dlComplete = 0;
