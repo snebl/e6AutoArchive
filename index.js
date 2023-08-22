@@ -37,7 +37,7 @@ let empty = false;
 let closing = false;
 
 let index = 0;
-let tempIndex = 0;
+let tempIndex = -1;
 let dlComplete = 0;
 const total = {
 	total: 0,
