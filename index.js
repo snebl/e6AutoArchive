@@ -20,6 +20,7 @@
 
 const fs = require('fs');
 const https = require('https');
+const { resolve } = require('path');
 
 const term = require('terminal-kit').terminal;
 
@@ -36,6 +37,7 @@ let empty = false;
 let closing = false;
 
 let index = 0;
+let tempIndex = 0;
 let dlComplete = 0;
 const total = {
 	total: 0,
@@ -56,6 +58,7 @@ catch (error) {
 	term('No config file detected.');
 
 	const defaultConfig = {
+		batch: 128,
 		selectedArchive: 0,
 		archives: [
 			{
@@ -100,18 +103,30 @@ function setFiles() {
 		return;
 	}
 
-	if (config.archives.length == 0) {
+	// check for bad config file
+	if (!config.hasOwnProperty('batch') || !config.hasOwnProperty('archives') || !config.hasOwnProperty('selectedArchive')) {
 		term.red('\n[ CONFIG ERROR ] ');
-		term('No available archives');
+		term('Invalid config file.\n  └─[ Please fix it, or try deleting it so that it may be re-generated. ]');
 		term.inputField();
 		return;
 	}
-	else if (config.selectedArchive >= config.archives.length) {
+	if (config.archives.length == 0) {
+		term.red('\n[ CONFIG ERROR ] ');
+		term('No available archives found in "./config.json".');
+		term.inputField();
+		return;
+	}
+	if (config.selectedArchive >= config.archives.length) {
 		config.selectedArchive = 0;
 	}
-
 	if (!fs.existsSync(config.archives[config.selectedArchive].dataJSON)) {
 		fs.writeFileSync(config.archives[config.selectedArchive].dataJSON, '{"table":[]}', 'utf-8');
+	}
+	if (config.batch > 320) {
+		config.batch = 320;
+	}
+	else if (config.batch < 1) {
+		config.batch = 1;
 	}
 
 	// check for bad data file
@@ -336,7 +351,7 @@ async function downloadAllFolders(save) {
 				// no need for an api key since links can be reconstructed if e6 says they are null
 				// + (config.userName + config.APIKey != '' ? 'login=' + config.userName + '&api_key=' + config.APIKey + '&' : '')
 				+ 'tags=' + tags
-				+ '&limit=320'
+				+ '&limit=' + config.batch
 				+ '&page=a' + save.table[index].latestID,
 			{ 'headers': { 'User-Agent': 'e6_auto_archive' } });
 
@@ -350,8 +365,9 @@ async function downloadAllFolders(save) {
 			}
 
 			// remember modified folder
-			if (foldersModified[foldersModified.length - 1] != tags) {
-				foldersModified.push((Object.keys(data['posts']).length == 320 ? '>' : '+') + Object.keys(data['posts']).length + ' ][ ' + tags);
+			if (tempIndex != index) {
+				foldersModified.push((Object.keys(data['posts']).length == config.batch ? '>' : '+') + Object.keys(data['posts']).length + ' ][ ' + tags);
+				tempIndex = index;
 			}
 
 			dlComplete = 0;
@@ -409,7 +425,7 @@ async function downloadAllFolders(save) {
 
 							// retry
 							if (attempt < 4) {
-								console.log('  ┬  ┬\n  │   └─[ Attempt ' + (attempt + 1) + ' Failed, Retrying... ]');
+								console.log('  ┬   ┬\n  │   └─[ Attempt ' + (attempt + 1) + ' Failed, Retrying... ]');
 								await new Promise(resolve => setTimeout(resolve, 200));
 								await downloadFile(attempt + 1);
 								resolve();
@@ -435,7 +451,7 @@ async function downloadAllFolders(save) {
 			save.table[index].latestID = data['posts'][0]['id'];
 
 			// if this was a max fetch (320 files) then repeat
-			if (data['posts'].length == 320) {
+			if (data['posts'].length == config.batch) {
 				// comply with rate limit (~1 API call per second)
 				// shouldn't be needed since its 320 files but someone might have ridiculous internet speeds
 				const rate = rateLimitDelay();
@@ -504,7 +520,8 @@ async function downloadAllFolders(save) {
 	catch (err) {
 		term.red('\n[ ERROR :< ] ');
 		console.error(err);
-		term.inputField();
+		await term.inputField().promise;
+		resolve();
 	}
 }
 
@@ -539,7 +556,7 @@ function exitHandler() {
 				directories.push(file.directory);
 				file.stream.close();
 				if (fs.existsSync(file.name)) fs.unlinkSync(file.name);
-				term.red('[ FILE DELETED ; ' + file.name + ' ]');
+				term.red('[ FILE DELETED ; ' + file.name + ' ]\n');
 			}
 		}
 		fileStreams = [];
