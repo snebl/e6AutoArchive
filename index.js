@@ -148,10 +148,35 @@ function setFiles() {
 	}
 }
 
+// launched with arguments
+if (process.argv.length > 2) {
+	if (process.argv.indexOf('-g') > -1) {
+		term.green('\nGenerating...');
+		createDataJSON().then(() => {
+			term.green('\nDone.\n');
+			if (process.argv.indexOf('-r') > -1) {
+				if (fs.existsSync(config.archives[config.selectedArchive].dataJSON)) {
+					downloadAllFolders(archiveData);
+				}
+			}
+		}, reason => {
+			term.red(reason);
+		});
+	}
+	else if (process.argv.indexOf('-r') > -1) {
+		if (fs.existsSync(config.archives[config.selectedArchive].dataJSON)) {
+			downloadAllFolders(archiveData);
+		}
+	}
+}
+
 /**
  * Main menu prompt
  */
 function mainMenu(message = '', clear = true) {
+	// no menu if launched with arguments
+	if (process.argv.length > 2) return;
+
 	if (clear) console.clear();
 	if (message != '') term.yellow(message);
 	archiveData = JSON.parse(fs.readFileSync(JSON.parse(fs.readFileSync('./config.json')).archives[config.selectedArchive].dataJSON));
@@ -338,6 +363,14 @@ function createDataJSON() {
  * @param {*} save object to be saved as folder data when done
  */
 async function downloadAllFolders(save) {
+	// when someone tries to download nothing for some reason
+	if (save.table.length == 0) {
+		term.red('\n[ ERROR :< ] ');
+		term('Empty data file.\n  └─[ Try the "Generate data" option with valid folders in your archive. ]');
+		await term.inputField().promise;
+		return;
+	}
+
 	if (closing) return;
 	try {
 		const folderName = save.table[index].tags;
@@ -513,7 +546,9 @@ async function downloadAllFolders(save) {
 			// end
 			index = 0;
 			fileStreams = [];
-			console.log('Finished! [ ' + new Date() + ' ]\n\nPress enter to return to main menu...');
+			console.log('Finished! [ ' + new Date() + ' ]\n');
+			if (process.argv.length > 2) process.exit();
+			console.log('Press enter to return to main menu...');
 			await term.inputField().promise;
 		}
 	}
@@ -521,7 +556,7 @@ async function downloadAllFolders(save) {
 		term.red('\n[ ERROR :< ] ');
 		console.error(err);
 		await term.inputField().promise;
-		resolve();
+		// resolve();
 	}
 }
 
