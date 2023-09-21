@@ -4,10 +4,10 @@
 
 - This program downloads **porn** from https://e621.net.
 - It's specifically made to manage a fairly large collection with ease.
-- Instead of inputing tags, you name folders after them to be automatically filled with the appropriate content.
-- Faster than other programs since it doesnt need to redundantly check every file to see if it exists.
+- Instead of inputing tags, you **name folders after tag searches** to be automatically filled with the appropriate content.
+- Faster than other programs since it doesn't need to redundantly check every file to see if it exists.
 - I didn't use a morbillion libraries to make this.
-- You don't have to provide a username or api key.
+- Null links are reconstructed so you don't need to provide a username or api key.
 - No telemetry.
 
 # Usage
@@ -18,6 +18,11 @@ Create a folder with two folders in it, one will contain your archive and the ot
 
 
 If want your archive folder to be named something else and/or want it in a different relative location from the exe you will have to specify this in the `config.json` file under `archives[0].folder` as shown in the image below. The config file will be generated in the same place as the exe once you open it for the first time.
+
+> Dot notation for directories :  
+`./` means "in this folder."  
+`../` means "in the folder containing this folder."  
+`../../` would mean "in the folder containing the folder that contains this folder."
 
 ![Screenshot](images/editLocationExample.png)
 
@@ -74,4 +79,4 @@ Use [pkg](https://www.npmjs.com/package/pkg) or something similar.
 
 This program was made out of annoyance with most downloaders that only let you do one query at a time. After some time with a collection large enough this becomes pretty impractical and so I made this program to make things (hopefully) easier.
 
-There are FAR better programs that solve that problem such as Grabber (as it lets you have a download list) but if you only download files from e621 and don't need all those bells an whistles then this program might be an okay alternative, and there is also the upside of not wasting time checking each file to see if it already exists.
+There are FAR better programs that solve that problem such as Grabber (as it lets you have a download list) but if you only download files from e621 and want a more simple and faster solution then this may be the program for you.
