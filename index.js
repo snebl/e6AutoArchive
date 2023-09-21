@@ -20,7 +20,6 @@
 
 const fs = require('fs');
 const https = require('https');
-const { resolve } = require('path');
 
 const term = require('terminal-kit').terminal;
 
