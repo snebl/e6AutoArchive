@@ -21,6 +21,7 @@
 const fs = require('fs');
 const https = require('https');
 
+// want to not use this eventually since its so fat
 const term = require('terminal-kit').terminal;
 
 let config;
@@ -32,12 +33,10 @@ let downloadPromises = [];
 let fileStreams = [];
 let foldersModified = [];
 
-let empty = false;
 let closing = false;
 
 let index = 0;
-let tempIndex = -1;
-let dlComplete = 0;
+
 const total = {
 	total: 0,
 	error: 0,
@@ -376,6 +375,7 @@ async function downloadAllFolders(save) {
 		const tags = (folderName).replace(' ', '+').replace('rating_', 'rating:').replace('score__', 'score:>');
 		console.log('\nDownloading: ' + save.table[index].tags);
 
+		let currentCompleted = 0;
 		// function is recursive so it can call itself (with timeout) when we need to fetch and download more than 320 files (e621's max limit)
 		async function downloadFolder() {
 			// fetch new URLs for each folder listed in the selected data json file
@@ -391,18 +391,18 @@ async function downloadAllFolders(save) {
 
 			// check if empty
 			if (data['posts'].length == 0) {
-				empty = true;
-				// resolve();
+				// nothing was downloaded
+				console.log('  ├─[ Already up to date... ]');
 				return;
 			}
 
-			// remember modified folder
-			if (tempIndex != index) {
-				foldersModified.push((Object.keys(data['posts']).length == config.batch ? '>' : '+') + Object.keys(data['posts']).length + ' ][ ' + tags);
-				tempIndex = index;
-			}
+			// remember modified folder [moved]
+			// if (tempIndex != index) {
+			// 	foldersModified.push((Object.keys(data['posts']).length == config.batch ? '>' : '+') + Object.keys(data['posts']).length + ' ][ ' + tags);
+			// 	tempIndex = index;
+			// }
 
-			dlComplete = 0;
+			// TODO: look into ways to make this faster
 			for (const post of data['posts']) {
 				// not recursive (except for retries)
 				function downloadFile(attempt = 0) {
@@ -434,14 +434,15 @@ async function downloadAllFolders(save) {
 						});
 
 						// save each missing file
+						// could prob do this with fetch but guh
 						const request = https.get(url, (response) => {
 							response.pipe(fileStream);
 
 							// after download completed close file stream
 							fileStream.on('finish', () => {
 								fileStream.close();
-								dlComplete++;
-								console.log('  ├─Download Completed [ ' + dlComplete + '/' + Object.keys(data['posts']).length + ' ]' + infoString + (Date.now() - dlTime) + ' ms');
+								currentCompleted++;
+								console.log('  ├─Download Completed [ ' + currentCompleted + (Object.keys(data['posts']).length == config.batch ? '' : ('/' + Object.keys(data['posts']).length)) + ' ]' + infoString + (Date.now() - dlTime) + ' ms');
 								if (wasDecoded) console.log('  │   └─[ URL Decoded ]');
 								total.total++;
 								total.bytes += post['file']['size'];
@@ -452,13 +453,13 @@ async function downloadAllFolders(save) {
 						// if there is an error downloading the file
 						request.on('error', async (err) => {
 							fileStream.close();
-							console.log('  ├─Error Downloading [ ' + dlComplete + '/' + Object.keys(data['posts']).length + ' ]' + infoString + '\n  ┴');
+							console.log('  ├─Error Downloading [ ' + currentCompleted + '/' + Object.keys(data['posts']).length + ' ]' + infoString + '\n  ┴');
 							console.log(err);
 
 							// retry
 							if (attempt < 4) {
 								console.log('  ┬   ┬\n  │   └─[ Attempt ' + (attempt + 1) + ' Failed, Retrying... ]');
-								await new Promise(resolve => setTimeout(resolve, 200));
+								await new Promise(r => setTimeout(r, 200));
 								await downloadFile(attempt + 1);
 								resolve();
 							}
@@ -482,10 +483,11 @@ async function downloadAllFolders(save) {
 			// only update latest ID once we are done
 			save.table[index].latestID = data['posts'][0]['id'];
 
-			// if this was a max fetch (320 files) then repeat
+			// if this was a full batch then repeat
 			if (data['posts'].length == config.batch) {
 				// comply with rate limit (~1 API call per second)
 				// shouldn't be needed since its 320 files but someone might have ridiculous internet speeds
+				// [addendum] user can make it lower than 320, so this is very needed
 				const rate = rateLimitDelay();
 
 				console.log('  ├─[ reached end of current fetch (' + rate.timePassed + 'ms passed), fetching more... ]');
@@ -496,19 +498,17 @@ async function downloadAllFolders(save) {
 				return;
 			}
 			else {
-				// resolve();
+				// remember modified folder
+				if (Object.keys(data['posts']).length > 0) foldersModified.push('+' + currentCompleted + ' ][ ' + tags);
+
+				// end of folder
 				return;
 			}
 		}
 
 		// wait for resolve
 		await downloadFolder();
-
 		index++;
-
-		// nothing was downloaded
-		if (empty) console.log('  ├─[ Already up to date... ]');
-		empty = false;
 
 		// not finished yet
 		if (index < save.table.length) {
