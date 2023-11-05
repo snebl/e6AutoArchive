@@ -3,11 +3,12 @@
 ![Screenshot](images/image.png)
 
 - This program downloads **porn** from https://e621.net.
-- It's specifically made to manage a fairly large collection with ease.
-- Instead of inputing tags, you **name folders after tag searches** to be automatically filled with the appropriate content.
-- Faster than other programs since it doesn't need to redundantly check every file to see if it exists.
+- Specifically made to manage a fairly large collection **and keep it up to date** with ease.
+- Instead of inputting tags, you **name folders after tag searches** to be automatically filled with the appropriate content.
+- **Faster than other programs** since it doesn't need to redundantly check every file to see if it exists.
+- You don't have to install Python since I made this in JavaScript.
 - I didn't use a morbillion libraries to make this.
-- Null links are reconstructed so you don't need to provide a username or api key.
+- Null links are reconstructed so **you don't ever need to provide a username or api key**.
 - No telemetry.
 
 # Usage
@@ -19,7 +20,7 @@ Create a folder with two folders in it, one will contain your archive and the ot
 
 If want your archive folder to be named something else and/or want it in a different relative location from the exe you will have to specify this in the `config.json` file under `archives[0].folder` as shown in the image below. The config file will be generated in the same place as the exe once you open it for the first time.
 
-> Dot notation for directories :  
+> Dot notation for directories:  
 `./` means "in this folder."  
 `../` means "in the folder containing this folder."  
 `../../` would mean "in the folder containing the folder that contains this folder."
@@ -27,7 +28,7 @@ If want your archive folder to be named something else and/or want it in a diffe
 ![Screenshot](images/editLocationExample.png)
 
 
-Fill the archive folder with subfolders named after tags from e621. These folders should be empty unless the files within are stored like `<id>_<md5>.<ext>`.
+Fill the archive folder with subfolders named after tags from e621. <ins>These folders should be empty</ins> unless the files within are stored like `<id>_<md5>.<ext>` (how this program will save filenames) or at least like `<id>_<whatever>`.
 
 ![Screenshot](images/Pasted%20image%2020230530171713.png)
 
@@ -54,7 +55,7 @@ If you have everything set up and would like to automate the program with batch 
 
 ---
 
-If you have an issue or feel that something about the program should be different then please submit an issue or pull request.
+If you have an issue or feel that something about the program should be different then please submit an issue or pull request, or just DM me on discord for a much faster response (linked on my profile).
 
 P.S. Do not run multiple instances of this program at the same time, e621 will rate limit you and it will not function properly.
 
@@ -70,9 +71,9 @@ You can also add a location (and data file) manually through the `config.json` f
 ![Screenshot](images/Pasted%20image%2020230618215722.png)
 
 
-# Building ( non-windows users )
+# Compiling to macOS/Linux
 
-Use [pkg](https://www.npmjs.com/package/pkg) or something similar.
+If you aren't using a windows machine you can use [pkg](https://www.npmjs.com/package/pkg) or something similar to compile the project's source code into an executable for your preferred operating system.
 
 
 # Info
