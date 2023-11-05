@@ -376,6 +376,7 @@ async function downloadAllFolders(save) {
 		console.log('\nDownloading: ' + save.table[index].tags);
 
 		let currentCompleted = 0;
+		let completeOffset = 0;
 		// function is recursive so it can call itself (with timeout) when we need to fetch and download more than 320 files (e621's max limit)
 		async function downloadFolder() {
 			// fetch new URLs for each folder listed in the selected data json file
@@ -396,12 +397,6 @@ async function downloadAllFolders(save) {
 				return;
 			}
 
-			// remember modified folder [moved]
-			// if (tempIndex != index) {
-			// 	foldersModified.push((Object.keys(data['posts']).length == config.batch ? '>' : '+') + Object.keys(data['posts']).length + ' ][ ' + tags);
-			// 	tempIndex = index;
-			// }
-
 			// TODO: look into ways to make this faster
 			for (const post of data['posts']) {
 				// not recursive (except for retries)
@@ -413,6 +408,11 @@ async function downloadAllFolders(save) {
 
 						// track how long it takes to download
 						const dlTime = Date.now();
+
+						// needed to properly display the media count
+						if (completeOffset == 0 && Object.keys(data['posts']).length != config.batch) {
+							completeOffset = currentCompleted;
+						}
 
 						// reconstruct URL if its null for some reason
 						let url = post['file']['url'];
@@ -442,7 +442,11 @@ async function downloadAllFolders(save) {
 							fileStream.on('finish', () => {
 								fileStream.close();
 								currentCompleted++;
-								console.log('  ├─Download Completed [ ' + currentCompleted + (Object.keys(data['posts']).length == config.batch ? '' : ('/' + Object.keys(data['posts']).length)) + ' ]' + infoString + (Date.now() - dlTime) + ' ms');
+								console.log(
+									'  ├─Download Completed [ ' + currentCompleted +
+									(Object.keys(data['posts']).length == config.batch ? '' : (' / ' + (completeOffset + Object.keys(data['posts']).length))) +
+									' ]' + infoString + (Date.now() - dlTime) + ' ms'
+								);
 								if (wasDecoded) console.log('  │   └─[ URL Decoded ]');
 								total.total++;
 								total.bytes += post['file']['size'];
