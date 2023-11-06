@@ -5,7 +5,7 @@
 
 A console program that lets you more easily make and maintain large collections of media from a *certian blue website* =3=
 
-[![Licence](https://img.shields.io/badge/Licence-mit-yellow?style=for-the-badge&color=000)](./LICENSE)
+[![License](https://img.shields.io/badge/License-mit-yellow?style=for-the-badge&color=000)](./LICENSE)
 &nbsp;&nbsp;&nbsp;
 [![Read Code](https://img.shields.io/badge/read-my_shit_code-yellow?style=for-the-badge&color=000)](./index.js)
 &nbsp;&nbsp;&nbsp;
