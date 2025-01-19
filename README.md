@@ -79,6 +79,16 @@ You can also add a location (and data file) manually through the `config.json` f
 
 ![Screenshot](images/Pasted%20image%2020230618215722.png)
 
+## Config File
+
+|Option|Explanation|Usage|
+|-:|:-|:-|
+|`batch`|How many files should be downloaded at a time.|Max is `320`. Default is `128`. Lower numbers are usually more stable but too low can slow down downloads. Recommended to leave it at default.|
+|`disableLinkReconstruction`|Should links not be reconstructed.|When `true` posts received without an image link will be skipped.|
+|`selectedArchive`|Current Selected archive folder to download for (by index).|This is so the program remembers which archive you selected last. You don't really need to touch this.|
+|`archives`|List of selectable archives.|You can manually add new archive locations here.|
+|`exclusionSubstrings`|A list of suffixes. Any subfolder with a suffix listed here will be ignored.| Useful if you have other programs that download to the same folder (archive).|
+
 ## Automation Arguments
 
 If you have everything set up and would like to automate the program with batch you can use the launch option `-g` to generate data, or `-r` to run the downloader, without having to use the menu. Passing both will generate data and then run the downloader.
