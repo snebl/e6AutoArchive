@@ -57,6 +57,7 @@ catch (error) {
 
 	const defaultConfig = {
 		batch: 128,
+		disableLinkReconstruction: false,
 		selectedArchive: 0,
 		archives: [
 			{
@@ -417,6 +418,12 @@ async function downloadAllFolders(save) {
 						// reconstruct URL if its null for some reason
 						let url = post['file']['url'];
 						let wasDecoded = false;
+						if (config.disableLinkReconstruction) {
+							total.error++;
+							console.log('  ┬\n  ├─[ Download Failed... (link null) ]');
+							resolve();
+							return;
+						}
 						if (url == null) {
 							url = 'https://static1.e621.net/data/' + post['file']['md5'].substring(0, 2) + '/' + post['file']['md5'].substring(2, 4) + '/' + post['file']['md5'] + '.' + post['file']['ext'];
 							wasDecoded = true;
