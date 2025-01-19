@@ -6,7 +6,6 @@ garbage/
 config.json
 *Data.json
 
-*.bat
 *.log
 *.txt
 *.exe
