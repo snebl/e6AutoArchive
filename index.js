@@ -276,8 +276,9 @@ function mainMenu(message = '', clear = true) {
 function archiveInfo() {
 	console.clear();
 	term.magenta(
-		'Current archive location: ' + config.archives[config.selectedArchive].folder +
-		'\nTotal valid folders: ' + archiveData.table.length
+		'Current archive: ' + config.archives[config.selectedArchive].folder + '\n' +
+		'  └─Total valid subfolders: ' + archiveData.table.length + '\n' +
+		'Data file: ' + config.archives[config.selectedArchive].dataJSON
 	);
 	mainMenu('', false);
 }
