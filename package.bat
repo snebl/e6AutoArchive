@@ -1,2 +1,2 @@
 @echo off
-pkg -t host package.json
+pkg -t node*-win-x64 package.json
