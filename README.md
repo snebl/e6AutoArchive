@@ -22,7 +22,9 @@ A console program that lets you more easily make and maintain large collections 
 
 This program was made out of annoyance with most downloaders that only let you do one query at a time. When you have a large enough collection this becomes pretty impractical. There are much fancier programs that solve this problem like [Grabber](https://github.com/Bionus/imgbrd-grabber) since they let you have a download list but it can be slow since it compares each pre-existing file you already have, and it can be very tedious to make the download list manually. e6AA uses the folders in your archive as the list and keeps track of post IDs to avoid checking every file. All this to make mass downloading furry porn much easier.
 
-# Usage
+### **This program can be a bit confusing to use at first. Please read the usage section below!**
+
+# Usage Guide
 
 Create a folder with two folders in it, one will contain your 'archive' and the other will contain the executable program provided in [releases](https://github.com/snebl/e6AutoArchive/releases).
 
