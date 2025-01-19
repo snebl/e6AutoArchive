@@ -3,7 +3,7 @@
 ![Screenshot](images/image.png)
 
 
-A console program that lets you more easily make and maintain large collections of media from a *certian blue website* =3=
+A console program that lets you more easily make and maintain large collections of media from a *certain blue website* =3=
 
 [![License](https://img.shields.io/badge/License-mit-yellow?style=for-the-badge&color=000)](./LICENSE)
 &nbsp;&nbsp;&nbsp;
@@ -48,7 +48,7 @@ Fill the archive folder with subfolders named after tags from e621. <ins>These f
 
 If everything is set up correctly you should now open the exe choose the "Generate data from archive" option. You will need to choose this option whenever you make changes to your archive folder such as adding a new folder or removing one.
 
-> The program tries to find the file with the largest ID number in each folder when you 'generate data', these numbers are written to a JSON file so that no time is wasted comparing files that you already have when downloading. The one downside to doing it this way is that if an **older** file is missing then the program won't know about it and therefore won't automatically re-download it like other programs do. Fortunetly files don't just spontainiously dissapear (I think), and e621 will never re-use an older ID number even if the post is of older media.
+> The program tries to find the file with the largest ID number in each folder when you 'generate data', these numbers are written to a JSON file so that no time is wasted comparing files that you already have when downloading. The one downside to doing it this way is that if an **older** file is missing then the program won't know about it and therefore won't automatically re-download it like other programs do. Fortunately files don't just spontaneously disappear (I think), and e621 will never re-use an older ID number even if the post is of older media.
 
 ![Screenshot](images/Pasted%20image%2020230618220839.png)
 
