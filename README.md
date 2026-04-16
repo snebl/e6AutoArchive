@@ -2,6 +2,9 @@
 
 ![Screenshot](images/image.png)
 
+## !! This is old, abandoned, and idk if it works anymore. Just use [gallery-dl](https://github.com/mikf/gallery-dl) instead. !!
+This was a fun little project. I definitly recomend making your own e6 downloader if you're looking for a fun beginner programming project and are also a gooner.
+
 ### !! This program can be a bit confusing to use at first. Please read the usage section below. !!
 ### !! NOTE: If the console menu "bugs out"/breaks when opened normally try opening through command prompt. !!
 
